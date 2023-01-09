@@ -47,9 +47,11 @@ class _HomePageState extends State<HomePage> {
               itemCount: todoList.length,
               itemBuilder: (context, index) {
                 return ToDoTile(
-                    taskName: todoList[index].newTaskName,
-                    isCompleted: todoList[index].isComplete,
-                    onchanged: (value) => handleTask(value, index));
+                  taskName: todoList[index].newTaskName,
+                  isCompleted: todoList[index].isComplete,
+                  onchanged: (value) => handleTask(value, index),
+                  deleteTask: ((context) => deleteTask(index)),
+                );
               },
             ),
     );
@@ -80,5 +82,11 @@ class _HomePageState extends State<HomePage> {
     });
     _controller.clear();
     Navigator.of(context).pop();
+  }
+
+  void deleteTask(int index) {
+    setState(() {
+      todoList.removeAt(index);
+    });
   }
 }
