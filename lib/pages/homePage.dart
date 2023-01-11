@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_2/components/dialogue_box.dart';
 import 'package:flutter_todo_2/components/todo_tile.dart';
-
-import '../model/todo_model.dart';
+import 'package:flutter_todo_2/data/database.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,10 +14,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  //Reference Hive Box
+  final _todoBox = Hive.box('todoBox');
+
   // Text Controller
   final _controller = TextEditingController();
 
-  final todoList = ToDo.todoList();
+  // final todoList = ToDo.todoList();
+
+  ToDoDatabase db = ToDoDatabase();
+
+  @override
+  void initState() {
+    // if first time ever opening the app
+    if (_todoBox.get("TODOLIST") == null) {
+      db.createInitialData();
+    } else {
+      db.loadData();
+    }
+    super.initState();
+  }
 
   // List todoList = [
   //   ['Complete Todo Tutorial', false],
@@ -39,16 +55,16 @@ class _HomePageState extends State<HomePage> {
         },
         child: Icon(Icons.add),
       ),
-      body: todoList.isEmpty
+      body: db.todoList.isEmpty
           ? Center(
               child: Text('No tasks in the list'),
             )
           : ListView.builder(
-              itemCount: todoList.length,
+              itemCount: db.todoList.length,
               itemBuilder: (context, index) {
                 return ToDoTile(
-                  taskName: todoList[index].newTaskName,
-                  isCompleted: todoList[index].isComplete,
+                  taskName: db.todoList[index][0],
+                  isCompleted: db.todoList[index][1],
                   onchanged: (value) => handleTask(value, index),
                   deleteTask: ((context) => deleteTask(index)),
                 );
@@ -59,8 +75,9 @@ class _HomePageState extends State<HomePage> {
 
   void handleTask(bool? value, int index) {
     setState(() {
-      todoList[index].isComplete = !todoList[index].isComplete;
+      db.todoList[index][1] = !db.todoList[index][1];
     });
+    db.updateDatabase();
   }
 
   void addNewTask() {
@@ -78,15 +95,17 @@ class _HomePageState extends State<HomePage> {
 
   void newTask() {
     setState(() {
-      todoList.add(ToDo(newTaskName: _controller.text));
+      db.todoList.add([_controller.text, false]);
+      _controller.clear();
     });
-    _controller.clear();
     Navigator.of(context).pop();
+    db.updateDatabase();
   }
 
   void deleteTask(int index) {
     setState(() {
-      todoList.removeAt(index);
+      db.todoList.removeAt(index);
     });
+    db.updateDatabase();
   }
 }
